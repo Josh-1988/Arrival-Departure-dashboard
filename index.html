@@ -332,9 +332,11 @@ table.rec-tbl tbody tr:hover td{background:var(--surface2)}
       <select class="flt-sel" id="f-cat" onchange="applyFilters()">
         <option value="">All</option>
         <option value="Early Arrival">Early Arrival</option>
-        <option value="Expected">Expected</option>
-        <option value="Late">Late</option>
+        <option value="Expected Arrival">Expected Arrival</option>
+        <option value="Late Arrival">Late Arrival</option>
         <option value="Early Departure">Early Departure</option>
+        <option value="Expected Departure">Expected Departure</option>
+        <option value="Late Departure">Late Departure</option>
       </select>
     </div>
     <button class="flt-reset" onclick="resetFilters()">✕ Clear</button>
@@ -605,13 +607,13 @@ function computeCat(td,ty){
   const t=parseFloat(td);
   if(ty==='arrival'){
     if(t<7.0)  return 'Early Arrival';
-    if(t<=7.5) return 'Expected';
-    return 'Late';
+    if(t<=7.5) return 'Expected Arrival';
+    return 'Late Arrival';
   }
   if(ty==='departure'){
     if(t<15.5)  return 'Early Departure';
-    if(t<=16.0) return 'Expected';
-    return 'Late';
+    if(t<=16.0) return 'Expected Departure';
+    return 'Late Departure';
   }
   return '';
 }
@@ -669,9 +671,22 @@ function grp(arr,key){return arr.reduce((a,r)=>{const k=r[key]||'?';(a[k]=a[k]||
 function pct(a,b){return b>0?Math.round(a/b*100):0;}
 function chip(v){
   if(!v) return '<span class="chip-empty">—</span>';
-  const m={'Early Arrival':'chip-EA','Expected':'chip-E','Late':'chip-L','Early Departure':'chip-ED'};
-  const short={'Early Arrival':'EA','Expected':'E','Late':'L','Early Departure':'ED'};
-  return `<span class="chip ${m[v]||'chip-empty'}">${short[v]||v}</span>`;
+  const m={
+    'Early Arrival'   :'chip-EA','Expected Arrival' :'chip-E','Late Arrival'    :'chip-L',
+    'Early Departure' :'chip-ED','Expected Departure':'chip-E','Late Departure'  :'chip-L',
+  };
+  const short={
+    'Early Arrival':'EA','Expected Arrival':'EA*','Late Arrival':'LA',
+    'Early Departure':'ED','Expected Departure':'ED*','Late Departure':'LD',
+  };
+  // Cleaner short labels
+  const lbl={
+    'Early Arrival':'EA','Expected Arrival':'E','Late Arrival':'L',
+    'Early Departure':'ED','Expected Departure':'E','Late Departure':'L',
+  };
+  const cls={'Early Arrival':'chip-EA','Expected Arrival':'chip-E','Late Arrival':'chip-L',
+             'Early Departure':'chip-ED','Expected Departure':'chip-E','Late Departure':'chip-L'};
+  return `<span class="chip ${cls[v]||'chip-empty'}">${lbl[v]||v}</span>`;
 }
 const DC={MAYUGE:'#4D889D',IGANGA:'#4F9262',Tororo:'#C8933A'};
 function dc(d){return DC[d]||'#6b8fa8';}
@@ -777,8 +792,8 @@ function resetFilters(){
 function renderKPIs(){
   const arr=filtered.filter(r=>r.ty==='arrival');
   const dep=filtered.filter(r=>r.ty==='departure');
-  const lA=arr.filter(r=>r.ca==='Late').length;
-  const lD=dep.filter(r=>r.ca==='Late').length;
+  const lA=arr.filter(r=>r.ca==='Late Arrival').length;
+  const lD=dep.filter(r=>r.ca==='Late Departure').length;
   const N=filtered.length;
   const days=[...new Set(filtered.map(r=>r.d))].length;
   const trainers=[...new Set(filtered.map(r=>r.tr).filter(Boolean))].length;
@@ -805,11 +820,11 @@ function renderPctStrip(){
   const arr=filtered.filter(r=>r.ty==='arrival');
   const dep=filtered.filter(r=>r.ty==='departure');
   const ea =arr.filter(r=>r.ca==='Early Arrival').length;
-  const ex =arr.filter(r=>r.ca==='Expected').length;
-  const la =arr.filter(r=>r.ca==='Late').length;
+  const ex =arr.filter(r=>r.ca==='Expected Arrival').length;
+  const la =arr.filter(r=>r.ca==='Late Arrival').length;
   const ed =dep.filter(r=>r.ca==='Early Departure').length;
-  const xd =dep.filter(r=>r.ca==='Expected').length;
-  const ld =dep.filter(r=>r.ca==='Late').length;
+  const xd =dep.filter(r=>r.ca==='Expected Departure').length;
+  const ld =dep.filter(r=>r.ca==='Late Departure').length;
 
   function pCard(label,n,tot,color,detail){
     const p=pct(n,tot);
@@ -858,9 +873,10 @@ function renderCharts(fdates){
   ]});
 
   mkChart('ch-punct','bar',{labels:lbl,datasets:[
-    {label:'Expected', data:dates.map(d=>filtered.filter(r=>r.d===d&&r.ca==='Expected').length),      backgroundColor:'#4F926266',borderColor:'#4F9262',borderWidth:1,borderRadius:4,borderSkipped:false},
-    {label:'Late',     data:dates.map(d=>filtered.filter(r=>r.d===d&&r.ca==='Late').length),           backgroundColor:'#A0343466',borderColor:'#A03434',borderWidth:1,borderRadius:4,borderSkipped:false},
-    {label:'Early Arr.',data:dates.map(d=>filtered.filter(r=>r.d===d&&r.ca==='Early Arrival').length), backgroundColor:'#4D889D55',borderColor:'#4D889D',borderWidth:1,borderRadius:4,borderSkipped:false},
+    {label:'Expected Arr.',  data:dates.map(d=>filtered.filter(r=>r.d===d&&r.ca==='Expected Arrival').length),   backgroundColor:'#4F926266',borderColor:'#4F9262',borderWidth:1,borderRadius:4,borderSkipped:false},
+    {label:'Late Arr.',      data:dates.map(d=>filtered.filter(r=>r.d===d&&r.ca==='Late Arrival').length),       backgroundColor:'#A0343466',borderColor:'#A03434',borderWidth:1,borderRadius:4,borderSkipped:false},
+    {label:'Early Arr.',     data:dates.map(d=>filtered.filter(r=>r.d===d&&r.ca==='Early Arrival').length),      backgroundColor:'#4D889D55',borderColor:'#4D889D',borderWidth:1,borderRadius:4,borderSkipped:false},
+    {label:'Late Dep.',      data:dates.map(d=>filtered.filter(r=>r.d===d&&r.ca==='Late Departure').length),     backgroundColor:'#A0343433',borderColor:'#A03434',borderWidth:1,borderRadius:4,borderSkipped:false,borderDash:[4,2]},
   ]});
 
   const bkts={};
@@ -910,8 +926,8 @@ function renderRoleTable(){
     const ra=filtered.filter(r=>r.ro===role&&r.ty==='arrival');
     const rd=filtered.filter(r=>r.ro===role&&r.ty==='departure');
     return{role,
-      arrN:ra.length, ea:ra.filter(r=>r.ca==='Early Arrival').length, ex:ra.filter(r=>r.ca==='Expected').length, la:ra.filter(r=>r.ca==='Late').length,
-      depN:rd.length, ed:rd.filter(r=>r.ca==='Early Departure').length, xd:rd.filter(r=>r.ca==='Expected').length, ld:rd.filter(r=>r.ca==='Late').length,
+      arrN:ra.length, ea:ra.filter(r=>r.ca==='Early Arrival').length, ex:ra.filter(r=>r.ca==='Expected Arrival').length, la:ra.filter(r=>r.ca==='Late Arrival').length,
+      depN:rd.length, ed:rd.filter(r=>r.ca==='Early Departure').length, xd:rd.filter(r=>r.ca==='Expected Departure').length, ld:rd.filter(r=>r.ca==='Late Departure').length,
       total:ra.length+rd.length};
   }
   const rows=roles.map(rowData);
@@ -952,10 +968,12 @@ function renderTable(){
   document.getElementById('pg-prev').disabled=tblPage===0;
   document.getElementById('pg-next').disabled=(tblPage+1)*PAGE>=tot;
   const catStyle={
-    'Early Arrival':'color:#4D889D;background:#4D889D12;border:1px solid #4D889D28',
-    'Expected'     :'color:#4F9262;background:#4F926212;border:1px solid #4F926228',
-    'Late'         :'color:#A03434;background:#A0343412;border:1px solid #A0343428',
-    'Early Departure':'color:#C8933A;background:#C8933A12;border:1px solid #C8933A28',
+    'Early Arrival'    :'color:#4D889D;background:#4D889D12;border:1px solid #4D889D28',
+    'Expected Arrival' :'color:#4F9262;background:#4F926212;border:1px solid #4F926228',
+    'Late Arrival'     :'color:#A03434;background:#A0343412;border:1px solid #A0343428',
+    'Early Departure'  :'color:#C8933A;background:#C8933A12;border:1px solid #C8933A28',
+    'Expected Departure':'color:#4F9262;background:#4F926212;border:1px solid #4F926228',
+    'Late Departure'   :'color:#A03434;background:#A0343412;border:1px solid #A0343428',
   };
   document.getElementById('tbl-body').innerHTML=page.map(r=>`<tr>
     <td style="font-family:var(--fm);font-size:11px;color:var(--text2)">${r.d}</td>
@@ -1008,8 +1026,8 @@ function exportRoleSummaryCSV(){
   const roles=[...new Set(filtered.map(r=>r.ro).filter(Boolean))].sort();
   const rows=roles.map(role=>{
     const ra=filtered.filter(r=>r.ro===role&&r.ty==='arrival'),rd=filtered.filter(r=>r.ro===role&&r.ty==='departure');
-    const ea=ra.filter(r=>r.ca==='Early Arrival').length,ex=ra.filter(r=>r.ca==='Expected').length,la=ra.filter(r=>r.ca==='Late').length;
-    const ed=rd.filter(r=>r.ca==='Early Departure').length,xd=rd.filter(r=>r.ca==='Expected').length,ld=rd.filter(r=>r.ca==='Late').length;
+    const ea=ra.filter(r=>r.ca==='Early Arrival').length,ex=ra.filter(r=>r.ca==='Expected Arrival').length,la=ra.filter(r=>r.ca==='Late Arrival').length;
+    const ed=rd.filter(r=>r.ca==='Early Departure').length,xd=rd.filter(r=>r.ca==='Expected Departure').length,ld=rd.filter(r=>r.ca==='Late Departure').length;
     return[role,ra.length,ea,ex,la,pct(la,ra.length)+'%',rd.length,ed,xd,ld,pct(ld,rd.length)+'%',ra.length+rd.length];
   });
   dlCSV([['Role','Arrivals','Early Arr','Expected Arr','Late Arr','% Late Arr','Departures','Early Dep','Expected Dep','Late Dep','% Late Dep','Total'],...rows],'role_summary.csv');
